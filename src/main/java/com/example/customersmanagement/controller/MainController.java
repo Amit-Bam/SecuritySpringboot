@@ -1,42 +1,35 @@
 package com.example.customersmanagement.controller;
 
-    import org.springframework.http.ResponseEntity;
-    import org.springframework.security.core.Authentication;
-    import org.springframework.security.core.GrantedAuthority;
-    import org.springframework.stereotype.Controller;
-    import org.springframework.ui.Model;
-    import org.springframework.web.bind.annotation.GetMapping;
+            import org.springframework.http.ResponseEntity;
+            import org.springframework.web.bind.annotation.*;
 
-    import java.util.HashMap;
-    import java.util.Map;
+            import java.util.HashMap;
+            import java.util.Map;
 
-@Controller
-public class MainController {
+            @RestController
+            public class MainController {
 
-    @GetMapping("/dashboard")
-    public String dashboard(Authentication authentication, Model model) {
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(role -> role.equals("ROLE_ADMIN"));
+                @GetMapping("/")
+                public ResponseEntity<Map<String, String>> home() {
+                    Map<String, String> response = new HashMap<>();
+                    response.put("message", "Welcome to Customer Management API");
+                    response.put("status", "success");
+                    return ResponseEntity.ok(response);
+                }
 
-        if (isAdmin) {
-            return "redirect:/admin/dashboard";
-        } else {
-            return "redirect:/user/dashboard";
-        }
-    }
+                @GetMapping("/about")
+                public ResponseEntity<Map<String, String>> about() {
+                    Map<String, String> response = new HashMap<>();
+                    response.put("message", "About Customer Management System");
+                    response.put("version", "1.0.0");
+                    return ResponseEntity.ok(response);
+                }
 
-    @GetMapping("/access-denied")
-    public String accessDenied(Model model) {
-        model.addAttribute("error", "Access Denied - You don't have permission to access this page");
-        return "access-denied";
-    }
-
-    @GetMapping("/")
-    public ResponseEntity<Map<String, String>> home() {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Welcome to Customer Management API");
-        response.put("status", "success");
-        return ResponseEntity.ok(response);
-    }
-}
+                @GetMapping("/contact")
+                public ResponseEntity<Map<String, String>> contact() {
+                    Map<String, String> response = new HashMap<>();
+                    response.put("message", "Contact information");
+                    response.put("email", "support@example.com");
+                    return ResponseEntity.ok(response);
+                }
+            }

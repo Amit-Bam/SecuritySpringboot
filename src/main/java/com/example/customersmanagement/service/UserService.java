@@ -15,69 +15,80 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
-    }
-
-    public Optional<User> getUserByUsername(String username) {
-        return userRepository.findByUsername(username);
-    }
-
-    public User createUser(String username, String password, String email, Set<String> roleNames) {
+    public void createUser(String username, String password, String email, Set<String> roleNames) {
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setEmail(email);
-        user.setEnabled(true);
 
         Set<Role> roles = new HashSet<>();
         for (String roleName : roleNames) {
-            roleRepository.findByName(roleName)
-                    .ifPresent(roles::add);
+            Role role = roleRepository.findByName(roleName)
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+            roles.add(role);
         }
         user.setRoles(roles);
 
-        return userRepository.save(user);
+        userRepository.save(user);
     }
 
-    public User updateUser(Long id, String username, String email, Set<String> roleNames) {
+    public void updateUser(Long id, String username, String email, Set<String> roleNames) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.setUsername(username);
         user.setEmail(email);
+        user.getRoles().clear();
+        userRepository.flush();
 
-        Set<Role> roles = new HashSet<>();
+        Set<Role> newRoles = new HashSet<>();
         for (String roleName : roleNames) {
-            roleRepository.findByName(roleName)
-                    .ifPresent(roles::add);
+            Role role = roleRepository.findByName(roleName)
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+            newRoles.add(role);
         }
-        user.setRoles(roles);
+        user.setRoles(newRoles);
 
-        return userRepository.save(user);
+        userRepository.save(user);
+    }
+
+    public void updateUserProfile(String username, String email) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setEmail(email);
+        userRepository.save(user);
+    }
+
+    // Add these missing methods to UserService
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
     public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+        User user = getUserById(id);
+        userRepository.delete(user);
     }
-
     public boolean existsByUsername(String username) {
         return userRepository.existsByUsername(username);
     }
 
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
-    }
 }
